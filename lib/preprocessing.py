@@ -23,17 +23,16 @@ def remove_noise_data_from_comments(comments):
         preprocessed_comments[index] = comment
     return preprocessed_comments
 
-def remove_irrelevant_feature_from_comments_classified(comments_classified):
+def remove_features_from_comments_classified(comments_classified, remove_features):
     new = []
 
     for comment_index in range(0, len(comments_classified)):
-        if comments_classified[comment_index][1] != "irrelevant":
+        if comments_classified[comment_index][1] not in remove_features:
             new.append(comments_classified[comment_index])
 
     return new
 
 def remove_stopwords_from_comments_classified(sentences): 
-    #basicamente a mesma função que o professor tinha implementado, mas desconsiderando "classes" e com variáveis renomeadas
     stopwords_list = nltk.corpus.stopwords.words('english')
     sentences_nostopwords = []
     
@@ -45,7 +44,6 @@ def remove_stopwords_from_comments_classified(sentences):
 '''use'''
 
 def use_radicals_from_comments_classified(sentences): 
-    #basicamente a mesma função que o professor tinha implementado, mas desconsiderando "classes" e com variáveis renomeadas
     radicals = nltk.stem.RSLPStemmer()
     sentences_radicals = []
     for (sentence, group) in sentences:

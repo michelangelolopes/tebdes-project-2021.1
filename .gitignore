@@ -1,0 +1,4 @@
+*.pdf
+results/
+lib/unused.py
+lib/__pycache__/
