@@ -74,10 +74,10 @@ def save_features_count_to_txt_file(train_features, test_features):
 def save_classifier_confusion_matrix_to_png_file(classifier_name, pred_features, test_features):
     filename = get_correct_filename("./results/###_confusion_matrix_%s.png" % classifier_name)
     
-    ConfusionMatrixDisplay.from_predictions(pred_features, test_features)
-    figure = plt.gcf()
-    figure.set_size_inches((10, 10), forward=False)
+    ConfusionMatrixDisplay.from_predictions(test_features, pred_features)
+    plt.gcf().set_size_inches((10, 10), forward=False)
     plt.savefig(filename)
+    plt.close()
 
 def save_classifiers_metrics_to_txt_file(classifiers_pred_features, test_features):
     filename = get_correct_filename("./results/###_classifiers_metrics.txt")
@@ -209,5 +209,7 @@ def get_correct_filename(initial_filename):
     while os.path.exists(filename):
         count += 1
         filename = initial_filename.replace("###", str(count))
+    
+    print("saving %s ..." % filename)
     
     return filename

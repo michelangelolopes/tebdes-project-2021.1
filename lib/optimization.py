@@ -6,21 +6,23 @@ from . import prediction
 
 '''optimize'''
 
-def optimize_train_test_datasets():
+def optimize_train_test_datasets(minutes, episode=12):
     initial_time = time.time()
     run_time = 0
     max_value = 0
-    minute = 1
-    episode = 12
+    minute_count = 1
 
     if os.path.exists("./samples/comments_ep12_classified_best.csv"):
-        max_value = get_classifiers_sum_acuracies("_best")
+        max_value = get_classifiers_sum_acuracies(file_version="_best")
+        max_value += get_classifiers_sum_acuracies(file_version="_best", remove_features=[])
+        max_value += get_classifiers_sum_acuracies(file_version="_best", remove_features=["irrelevant", "good", "terrible", "perfect"])
         print(max_value)
-        input()
 
-    while run_time < (60 * 5):
+    while run_time < (60 * minutes):
         save_comments_random_ordered_to_csv_file(episode)
-        value = get_classifiers_sum_acuracies("_random")
+        value = get_classifiers_sum_acuracies(file_version="_random")
+        value += get_classifiers_sum_acuracies(file_version="_random", remove_features=[])
+        value += get_classifiers_sum_acuracies(file_version="_random", remove_features=["irrelevant", "good", "terrible", "perfect"])
         
         if max_value < value:
             print(value)
@@ -35,9 +37,9 @@ def optimize_train_test_datasets():
         cur_time = time.time()
         run_time = cur_time - initial_time
 
-        if run_time > (minute * 60):
+        if run_time > (minute_count * 60):
             print(round(run_time, 2), "seconds")
-            minute += 1
+            minute_count += 1
 
 '''save'''
 
@@ -71,21 +73,15 @@ def save_comments_random_ordered_to_csv_file(episode):
 
 '''get'''
 
-def get_classifiers_sum_acuracies(file_version, episode = 12):
-    train_data, train_features, test_data, test_features = prediction.get_train_test_data_features(episode, file_version)
-    df_tf_idf_vector_train, df_tf_idf_vector_test = prediction.get_train_test_tf_idf_vector(train_data, test_data)
+def get_classifiers_sum_acuracies(file_version, episode = 12, remove_features=["irrelevant"]):
+    train_data, train_features, test_data, test_features = prediction.get_train_test_data_features(episode, file_version, remove_features)
+    df_tf_idf_vector_train, df_tf_idf_vector_test, _ = prediction.get_train_test_tf_idf_vector(train_data, test_data)
 
-    classifiers = prediction.get_classifiers()
+    classifiers = prediction.get_classifiers_functions()
 
     sum = 0
     for _, classifier_method in classifiers:
-        sum += get_classifier_accuracy(classifier_method, df_tf_idf_vector_train, train_features, df_tf_idf_vector_test, test_features)
+        pred_features, _ = prediction.train_classifier(classifier_method, df_tf_idf_vector_train, train_features, df_tf_idf_vector_test)
+        sum += prediction.accuracy_score(test_features, pred_features)
     
     return sum
-
-def get_classifier_accuracy(classifier, df_tf_idf_vector_data, train_features, df_tf_idf_vector_test, test_features):
-    trained_classifier = classifier.fit(df_tf_idf_vector_data, train_features)
-    trained_classifier.predict(df_tf_idf_vector_test)
-    accuracy = classifier.score(df_tf_idf_vector_test, test_features)
-    
-    return accuracy
