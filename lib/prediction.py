@@ -10,34 +10,48 @@ import pandas as pd
 from . import dataset
 from . import preprocessing
 
+from sklearn.model_selection import cross_val_predict
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import KFold
+
 '''run'''
 
-def run_classifiers(file_version="", episode=12, remove_features=["irrelevant"]):
-    train_data, train_features, test_data, test_features = get_train_test_data_features(episode, file_version, remove_features)
-    df_tf_idf_vector_train, df_tf_idf_vector_test, tokens = get_train_test_tf_idf_vector(train_data, test_data)
+def run_classifiers(filename, file_version="", episode=12, remove_features=[], kfolds=4):
+    comments_classified = get_preprocessed_data(episode, file_version, remove_features)
+    comments = get_cross_validation_kfolds_data(comments_classified, kfolds)
 
-    if os.path.exists("./results/") == False:
-        os.mkdir("./results/")
+    for fold in range(0, kfolds):
+        train_data = comments['train']['data'][fold]
+        train_features = comments['train']['features'][fold]
+        test_data = comments['test']['data'][fold]
+        test_features = comments['test']['features'][fold]
 
-    save_features_count_to_txt_file(train_features, test_features)
+        df_tf_idf_vector_train, df_tf_idf_vector_test, tokens = get_train_test_tf_idf_vector(train_data, test_data)
 
-    classifiers = get_classifiers_functions()
-    classifier_has_coefficient = ["naive_bayes", "svm"]
+        filename_fold = filename + "fold %d/" % fold
 
-    classifiers_pred_features = []
-    classifiers_tokens_coefficient = []
+        if os.path.exists(filename_fold) == False:
+            os.makedirs(filename_fold)
 
-    for classifier_name, classifier_method in classifiers:
-        pred_features, tokens_coefficient = train_classifier(classifier_method, df_tf_idf_vector_train, train_features, df_tf_idf_vector_test)
-        save_classifier_confusion_matrix_to_png_file(classifier_name, pred_features, test_features)
+        save_features_count_to_txt_file(train_features, test_features, filename_fold)
 
-        if classifier_name in classifier_has_coefficient:
-            classifiers_tokens_coefficient.append((classifier_name, tokens_coefficient))
-        classifiers_pred_features.append((classifier_name, pred_features))
-    
-    save_classifiers_tokens_coefficient_to_txt_file(classifiers_tokens_coefficient, tokens)
-    save_classifiers_predictions_to_txt_file(classifiers_pred_features, test_features)
-    save_classifiers_metrics_to_txt_file(classifiers_pred_features, test_features)
+        classifiers = get_classifiers_functions()
+        classifier_has_coefficient = ["naive_bayes", "svm"]
+
+        classifiers_pred_features = []
+        classifiers_tokens_coefficient = []
+
+        for classifier_name, classifier_method in classifiers:
+            pred_features, tokens_coefficient = train_classifier(classifier_method, df_tf_idf_vector_train, train_features, df_tf_idf_vector_test)
+            save_classifier_confusion_matrix_to_png_file(classifier_name, pred_features, test_features, filename_fold)
+
+            if classifier_name in classifier_has_coefficient:
+                classifiers_tokens_coefficient.append((classifier_name, tokens_coefficient))
+            classifiers_pred_features.append((classifier_name, pred_features))
+        
+        save_classifiers_tokens_coefficient_to_txt_file(classifiers_tokens_coefficient, tokens, filename_fold)
+        save_classifiers_predictions_to_txt_file(classifiers_pred_features, test_features, filename_fold)
+        save_classifiers_metrics_to_txt_file(classifiers_pred_features, test_features, filename_fold)
 
 '''train'''
 
@@ -54,8 +68,8 @@ def train_classifier(classifier, df_tf_idf_vector_train, train_features, df_tf_i
 
 '''save'''
 
-def save_features_count_to_txt_file(train_features, test_features):
-    filename = get_correct_filename("./results/###_classifiers_features.txt")
+def save_features_count_to_txt_file(train_features, test_features, filename):
+    filename = get_correct_filename(filename + "classifiers_features.txt")
 
     original_features = train_features + test_features
     original_each_feature_count = get_each_feature_count(original_features)
@@ -71,16 +85,16 @@ def save_features_count_to_txt_file(train_features, test_features):
         file.write(train_str)
         file.write(test_str)
 
-def save_classifier_confusion_matrix_to_png_file(classifier_name, pred_features, test_features):
-    filename = get_correct_filename("./results/###_confusion_matrix_%s.png" % classifier_name)
+def save_classifier_confusion_matrix_to_png_file(classifier_name, pred_features, test_features, filename):
+    filename = get_correct_filename(filename + "confusion_matrix_%s.png" % classifier_name)
     
     ConfusionMatrixDisplay.from_predictions(test_features, pred_features)
     plt.gcf().set_size_inches((10, 10), forward=False)
     plt.savefig(filename)
     plt.close()
 
-def save_classifiers_metrics_to_txt_file(classifiers_pred_features, test_features):
-    filename = get_correct_filename("./results/###_classifiers_metrics.txt")
+def save_classifiers_metrics_to_txt_file(classifiers_pred_features, test_features, filename):
+    filename = get_correct_filename(filename + "classifiers_metrics.txt")
     
     metric_list = lambda metric: [round(value, 2) for value in metric]
 
@@ -97,8 +111,8 @@ def save_classifiers_metrics_to_txt_file(classifiers_pred_features, test_feature
             file.write('Recall: %s\n' % metric_list(recall))
             file.write('Média F1: %s\n\n' % metric_list(f1))
 
-def save_classifiers_predictions_to_txt_file(classifiers_pred_features, test_features):
-    filename = get_correct_filename("./results/###_classifiers_predictions.txt")
+def save_classifiers_predictions_to_txt_file(classifiers_pred_features, test_features, filename):
+    filename = get_correct_filename(filename + "classifiers_predictions.txt")
     
     with open(filename, "w") as file:
         count = 0
@@ -110,8 +124,8 @@ def save_classifiers_predictions_to_txt_file(classifiers_pred_features, test_fea
                 file.write(string)
             file.write("\n")
 
-def save_classifiers_tokens_coefficient_to_txt_file(classifiers_tokens_coefficient, tokens, quantity=20):
-    filename = get_correct_filename("./results/###_classifiers_words_coefficients.txt")
+def save_classifiers_tokens_coefficient_to_txt_file(classifiers_tokens_coefficient, tokens, filename, quantity=20):
+    filename = get_correct_filename(filename + "classifiers_words_coefficients.txt")
 
     with open(filename, "w") as file:
         for classifier_name, tokens_coefficient in classifiers_tokens_coefficient:
@@ -143,7 +157,7 @@ def get_train_test_tf_idf_vector(train_data, test_data):
 
     return df_tf_idf_vector_train, df_tf_idf_vector_test, tf_idf_tokens
 
-def get_train_test_data_features(episode, file_version, remove_features):
+def get_preprocessed_data(episode, file_version, remove_features):
     filename = "samples/comments_ep%d_classified%s.csv" % (episode, file_version)
 
     comments_classified = dataset.load_classified_comments_from_csv_file(filename)
@@ -151,36 +165,40 @@ def get_train_test_data_features(episode, file_version, remove_features):
     comments_classified = preprocessing.remove_stopwords_from_comments_classified(comments_classified)
     comments_classified = preprocessing.use_radicals_from_comments_classified(comments_classified)
 
-    comments_classified_train, comments_classified_test = get_train_test_classified_data(comments_classified)
+    return comments_classified
 
-    train_data, train_features, test_data, test_features = [], [], [], []
-    
-    for comment, feature in comments_classified_train:
-        train_data.append(comment)
-        train_features.append(feature)
+def get_cross_validation_kfolds_data(comments_classified, kfolds):
+    four_folds = KFold(n_splits=kfolds, shuffle=False)
+    comments = {}
 
-    for comment, feature in comments_classified_test:
-        test_data.append(comment)
-        test_features.append(feature)
+    comments['train'] = {}
+    comments['train']['data'] = []
+    comments['train']['features'] = []
 
-    return train_data, train_features, test_data, test_features
+    comments['test'] = {}
+    comments['test']['data'] = []
+    comments['test']['features'] = []
 
-def get_train_test_classified_data(comments_classified):
-    total = len(comments_classified)
+    count = 0
+    for train_indexes, test_indexes in four_folds.split(comments_classified):
+        comments['train']['data'].append([])
+        comments['train']['features'].append([])
+        comments['test']['data'].append([])
+        comments['test']['features'].append([])
 
-    test = int(total/4)
-    train = total - test
+        train_data = [comments_classified[index] for index in train_indexes]
+        test_data = [comments_classified[index] for index in test_indexes]
 
-    comments_classified_train = []
-    comments_classified_test = []
+        for comment, feature in train_data:
+            comments['train']['data'][count].append(comment)
+            comments['train']['features'][count].append(feature)
+        
+        for comment, feature in test_data:
+            comments['test']['data'][count].append(comment)
+            comments['test']['features'][count].append(feature)
+        count += 1
 
-    for comment_index in range(0, train):
-        comments_classified_train.append(comments_classified[comment_index])
-    
-    for comment_index in range(train, train + test):
-        comments_classified_test.append(comments_classified[comment_index])
-
-    return comments_classified_train, comments_classified_test
+    return comments
 
 def get_classifiers_functions():
     classifiers = []
@@ -209,7 +227,5 @@ def get_correct_filename(initial_filename):
     while os.path.exists(filename):
         count += 1
         filename = initial_filename.replace("###", str(count))
-    
-    print("saving %s ..." % filename)
     
     return filename

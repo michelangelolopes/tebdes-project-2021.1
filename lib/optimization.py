@@ -14,14 +14,12 @@ def optimize_train_test_datasets(minutes, episode=12):
 
     if os.path.exists("./samples/comments_ep12_classified_best.csv"):
         max_value = get_classifiers_sum_acuracies(file_version="_best")
-        max_value += get_classifiers_sum_acuracies(file_version="_best", remove_features=[])
         max_value += get_classifiers_sum_acuracies(file_version="_best", remove_features=["irrelevant", "good", "terrible", "perfect"])
         print(max_value)
 
     while run_time < (60 * minutes):
         save_comments_random_ordered_to_csv_file(episode)
         value = get_classifiers_sum_acuracies(file_version="_random")
-        value += get_classifiers_sum_acuracies(file_version="_random", remove_features=[])
         value += get_classifiers_sum_acuracies(file_version="_random", remove_features=["irrelevant", "good", "terrible", "perfect"])
         
         if max_value < value:
@@ -73,15 +71,23 @@ def save_comments_random_ordered_to_csv_file(episode):
 
 '''get'''
 
-def get_classifiers_sum_acuracies(file_version, episode = 12, remove_features=["irrelevant"]):
-    train_data, train_features, test_data, test_features = prediction.get_train_test_data_features(episode, file_version, remove_features)
-    df_tf_idf_vector_train, df_tf_idf_vector_test, _ = prediction.get_train_test_tf_idf_vector(train_data, test_data)
-
-    classifiers = prediction.get_classifiers_functions()
+def get_classifiers_sum_acuracies(file_version, episode = 12, remove_features=[], kfolds=4):
+    comments_classified = prediction.get_preprocessed_data(episode, file_version, remove_features)
+    comments = prediction.get_cross_validation_kfolds_data(comments_classified, kfolds)
 
     sum = 0
-    for _, classifier_method in classifiers:
-        pred_features, _ = prediction.train_classifier(classifier_method, df_tf_idf_vector_train, train_features, df_tf_idf_vector_test)
-        sum += prediction.accuracy_score(test_features, pred_features)
+    for fold in range(0, kfolds):
+        train_data = comments['train']['data'][fold]
+        train_features = comments['train']['features'][fold]
+        test_data = comments['test']['data'][fold]
+        test_features = comments['test']['features'][fold]
+
+        df_tf_idf_vector_train, df_tf_idf_vector_test, _ = prediction.get_train_test_tf_idf_vector(train_data, test_data)
+
+        classifiers = prediction.get_classifiers_functions()
+
+        for _, classifier_method in classifiers:
+            pred_features, _ = prediction.train_classifier(classifier_method, df_tf_idf_vector_train, train_features, df_tf_idf_vector_test)
+            sum += prediction.accuracy_score(test_features, pred_features)
     
     return sum

@@ -51,8 +51,6 @@ def classify_comments_to_csv_file(comments, episode):
         csv_file.write("Comment;Opinion\n")
         line_count = 0
 
-    print(line_count)
-    input()
     opinions = ["perfect", "hyped", "good", "average", "bad", "disappointed", "terrible", "irrelevant"]
 
     preprocessed_comments = preprocessing.remove_noise_data_from_comments(comments)

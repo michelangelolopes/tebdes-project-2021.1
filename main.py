@@ -11,27 +11,31 @@ def main():
     #topicid = 1880084 #episódio 1
 
     remove_features = ["irrelevant", "good", "terrible", "perfect"]
+    original_filename = prediction.get_correct_filename("results/execution ###/")
+    original_filename += "DATASET/FEATURES/"
 
     #dataset original
 
     ###todas as classes
-    prediction.run_classifiers(remove_features=[])
-    ###sem classe irrelevant
-    prediction.run_classifiers()
-    ###sem classes listadas
-    prediction.run_classifiers(remove_features=remove_features)
+    filename = original_filename.replace("DATASET", "original_dataset").replace("FEATURES", "all_features")
+    prediction.run_classifiers(filename=filename)
+    
+    ###metade das classes
+    filename = original_filename.replace("DATASET", "original_dataset").replace("FEATURES", "half_features")
+    prediction.run_classifiers(remove_features=remove_features, filename=filename)
 
     #dataset otimizado
 
     ###todas as classes
-    prediction.run_classifiers(file_version="_best", remove_features=[])
-    ###sem classe irrelevant
-    prediction.run_classifiers(file_version="_best")
-    ###sem classes listadas
-    prediction.run_classifiers(file_version="_best", remove_features=remove_features)
+    filename = original_filename.replace("DATASET", "otimized_dataset").replace("FEATURES", "all_features")
+    prediction.run_classifiers(file_version="_best", filename=filename)
+
+    ###metade das classes
+    filename = original_filename.replace("DATASET", "otimized_dataset").replace("FEATURES", "half_features")
+    prediction.run_classifiers(file_version="_best", remove_features=remove_features, filename=filename)
     
     return
 
 if __name__ == "__main__":
     main()
-    #optimization.optimize_train_test_datasets(3)    
+    #optimization.optimize_train_test_datasets(10)    
