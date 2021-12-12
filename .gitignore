@@ -1,3 +1,4 @@
+*.csv
 *.pdf
 outputs/
 samples/*random.csv

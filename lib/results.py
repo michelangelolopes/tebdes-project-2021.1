@@ -86,7 +86,8 @@ def get_accuracies_average_dict(accuracy_dict):
                 for fold in range(0, folds_count):
                     accuracies_average_dict[dataset][features][classifier_name] += accuracy_dict[dataset][features][fold][classifier_name]
                 
-                accuracies_average_dict[dataset][features][classifier_name] /= folds_count
+                if folds_count != 0:
+                    accuracies_average_dict[dataset][features][classifier_name] /= folds_count
     return accuracies_average_dict
 
 '''save'''

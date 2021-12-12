@@ -2,7 +2,7 @@ from sklearn import svm
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score, recall_score, f1_score, precision_score, ConfusionMatrixDisplay
 from sklearn.model_selection import KFold
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
 import matplotlib.pyplot as plt
 import os
@@ -203,9 +203,10 @@ def get_cross_validation_kfolds_data(comments_classified, kfolds):
 
 def get_classifiers_functions():
     classifiers = []
+    #classifiers.append(("naive_bayes", GaussianNB()))
     classifiers.append(("naive_bayes", MultinomialNB(alpha=0.05)))
     classifiers.append(("svm", svm.SVC(kernel='linear', C=1.0)))
-    classifiers.append(("kmeans", KNeighborsClassifier(n_neighbors=3)))
+    classifiers.append(("kmeans", KNeighborsClassifier(n_neighbors=4)))
     classifiers.append(("knn", NearestCentroid()))
 
     return classifiers

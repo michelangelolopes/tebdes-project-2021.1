@@ -1,6 +1,6 @@
+from sys import argv
 import os
 import random
-from sys import argv
 import time
 
 from lib import prediction
