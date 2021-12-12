@@ -1,5 +1,5 @@
 *.pdf
-results/
+outputs/
 samples/*random.csv
 lib/unused.py
 lib/__pycache__/

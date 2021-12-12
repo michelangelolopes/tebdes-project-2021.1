@@ -1,8 +1,9 @@
 import os
 import random
+from sys import argv
 import time
 
-from . import prediction
+from lib import prediction
 
 '''optimize'''
 
@@ -91,3 +92,19 @@ def get_classifiers_sum_acuracies(file_version, episode = 12, remove_features=[]
             sum += prediction.accuracy_score(test_features, pred_features)
     
     return sum
+
+if __name__ == "__main__":
+    running_time = 3
+
+    try:
+        running_time = int(argv[1])
+    except ValueError:
+        print("\"%s\" não é um valor inteiro maior que zero, então será utilizado o tempo de execução padrão de 3 min." % argv[1])
+    
+    if running_time <= 0:
+        print("%d não é um valor inteiro maior que zero, então será utilizado o tempo de execução padrão de 3 min." % running_time)
+        running_time = 3
+    else:
+        print("A otimização do conjunto de dados será executada por %d min." % running_time)
+
+    optimize_train_test_datasets(running_time)

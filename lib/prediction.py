@@ -1,18 +1,19 @@
 from sklearn import svm
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score, recall_score, f1_score, precision_score, ConfusionMatrixDisplay
+from sklearn.model_selection import KFold
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
+import warnings
 
 from . import dataset
 from . import preprocessing
 
-from sklearn.model_selection import cross_val_predict
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import KFold
+#removendo warning de usar a função coef_ do sklearn para o multinomial naive bayes
+warnings.simplefilter(action='ignore', category=FutureWarning) 
 
 '''run'''
 
@@ -28,7 +29,7 @@ def run_classifiers(filename, file_version="", episode=12, remove_features=[], k
 
         df_tf_idf_vector_train, df_tf_idf_vector_test, tokens = get_train_test_tf_idf_vector(train_data, test_data)
 
-        filename_fold = filename + "fold %d/" % fold
+        filename_fold = filename + "fold_%d/" % fold
 
         if os.path.exists(filename_fold) == False:
             os.makedirs(filename_fold)
@@ -69,7 +70,7 @@ def train_classifier(classifier, df_tf_idf_vector_train, train_features, df_tf_i
 '''save'''
 
 def save_features_count_to_txt_file(train_features, test_features, filename):
-    filename = get_correct_filename(filename + "classifiers_features.txt")
+    filename = get_filename_with_next_count(filename + "classifiers_features.txt")
 
     original_features = train_features + test_features
     original_each_feature_count = get_each_feature_count(original_features)
@@ -86,7 +87,7 @@ def save_features_count_to_txt_file(train_features, test_features, filename):
         file.write(test_str)
 
 def save_classifier_confusion_matrix_to_png_file(classifier_name, pred_features, test_features, filename):
-    filename = get_correct_filename(filename + "confusion_matrix_%s.png" % classifier_name)
+    filename = get_filename_with_next_count(filename + "confusion_matrix_%s.png" % classifier_name)
     
     ConfusionMatrixDisplay.from_predictions(test_features, pred_features)
     plt.gcf().set_size_inches((10, 10), forward=False)
@@ -94,7 +95,7 @@ def save_classifier_confusion_matrix_to_png_file(classifier_name, pred_features,
     plt.close()
 
 def save_classifiers_metrics_to_txt_file(classifiers_pred_features, test_features, filename):
-    filename = get_correct_filename(filename + "classifiers_metrics.txt")
+    filename = get_filename_with_next_count(filename + "classifiers_metrics.txt")
     
     metric_list = lambda metric: [round(value, 2) for value in metric]
 
@@ -112,7 +113,7 @@ def save_classifiers_metrics_to_txt_file(classifiers_pred_features, test_feature
             file.write('Média F1: %s\n\n' % metric_list(f1))
 
 def save_classifiers_predictions_to_txt_file(classifiers_pred_features, test_features, filename):
-    filename = get_correct_filename(filename + "classifiers_predictions.txt")
+    filename = get_filename_with_next_count(filename + "classifiers_predictions.txt")
     
     with open(filename, "w") as file:
         count = 0
@@ -125,7 +126,7 @@ def save_classifiers_predictions_to_txt_file(classifiers_pred_features, test_fea
             file.write("\n")
 
 def save_classifiers_tokens_coefficient_to_txt_file(classifiers_tokens_coefficient, tokens, filename, quantity=20):
-    filename = get_correct_filename(filename + "classifiers_words_coefficients.txt")
+    filename = get_filename_with_next_count(filename + "classifiers_words_coefficients.txt")
 
     with open(filename, "w") as file:
         for classifier_name, tokens_coefficient in classifiers_tokens_coefficient:
@@ -220,7 +221,7 @@ def get_each_feature_count(comments_classified):
     feature_count = sorted((key, value) for (key,value) in feature_count.items())
     return feature_count
 
-def get_correct_filename(initial_filename):
+def get_filename_with_next_count(initial_filename):
     count = 0
     filename = initial_filename.replace("###", str(count))
     
