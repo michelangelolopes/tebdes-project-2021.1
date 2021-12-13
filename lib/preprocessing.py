@@ -1,6 +1,16 @@
 import nltk
 import re
 
+try:
+    nltk.data.find('stopwords')
+except LookupError:
+    nltk.download('stopwords')
+
+try:
+    nltk.data.find('rslp')
+except LookupError:
+    nltk.download('rslp')
+
 '''remove'''
 
 def remove_noise_data_from_comments(comments):

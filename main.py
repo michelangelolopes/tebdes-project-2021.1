@@ -13,20 +13,24 @@ def main():
 
     #dataset original
 
+    print("running case: original_dataset + all_features")
     ###todas as classes
     filename = original_filename.replace("DATASET", "original_dataset").replace("FEATURES", "all_features")
     prediction.run_classifiers(filename=filename)
     
+    print("running case: original_dataset + half_features")
     ###metade das classes
     filename = original_filename.replace("DATASET", "original_dataset").replace("FEATURES", "half_features")
     prediction.run_classifiers(remove_features=remove_features, filename=filename)
 
     #dataset otimizado
 
+    print("running case: otimized_dataset + all_features")
     ###todas as classes
     filename = original_filename.replace("DATASET", "otimized_dataset").replace("FEATURES", "all_features")
     prediction.run_classifiers(file_version="_best", filename=filename)
 
+    print("running case: otimized_dataset + half_features")
     ###metade das classes
     filename = original_filename.replace("DATASET", "otimized_dataset").replace("FEATURES", "half_features")
     prediction.run_classifiers(file_version="_best", remove_features=remove_features, filename=filename)
